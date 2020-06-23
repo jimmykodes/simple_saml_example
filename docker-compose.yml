@@ -1,0 +1,44 @@
+version: '3'
+services:
+  sp:
+    build:
+      context: .
+      dockerfile: Dockerfile.saml
+    volumes:
+      - ./sp/apache.conf:/etc/apache2/sites-available/000-default.conf
+      - ./sp/saml_secrets.php:/var/lib/simplesamlphp/secrets.inc.php
+      - ./sp/saml_config.php:/etc/simplesamlphp/config.php
+      - ./sp/saml20-idp-remote.php:/etc/simplesamlphp/metadata/saml20-idp-remote.php
+      - ./sp/authsources.php:/etc/simplesamlphp/authsources.php
+      - ./sp/certs:/etc/ssl/certs
+    ports:
+      - 8000:80
+  idp:
+    build:
+      context: .
+      dockerfile: Dockerfile.saml
+    volumes:
+      - ./idp/apache_idp.conf:/etc/apache2/sites-available/000-default.conf
+      - ./idp/saml_idp_secrets.php:/var/lib/simplesamlphp/secrets.inc.php
+      - ./idp/saml_idp_config.php:/etc/simplesamlphp/config.php
+      - ./idp/authsources.php:/etc/simplesamlphp/authsources.php
+      - ./idp/saml20-idp-hosted.php:/etc/simplesamlphp/metadata/saml20-idp-hosted.php
+      - ./idp/saml20-sp-remote.php:/etc/simplesamlphp/metadata/saml20-sp-remote.php
+      - ./idp/certs:/etc/ssl/certs
+    ports:
+      - 8080:80
+    depends_on:
+      - db
+  db:
+    image: mariadb
+    volumes:
+    - ./var/db:/var/lib/mysql
+    - ./dbinit:/docker-entrypoint-initdb.d
+    ports:
+    - 3306:3306
+    environment:
+      MYSQL_RANDOM_ROOT_PASSWORD: 1
+      MYSQL_DATABASE: saml
+      MYSQL_USER: user
+      MYSQL_PASSWORD: password
+
